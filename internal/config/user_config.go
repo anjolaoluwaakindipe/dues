@@ -8,7 +8,7 @@ import (
 )
 
 type UserConfig struct {
-	Commands map[string]process.Command
+	Commands map[string]*process.Command
 }
 
 // Takes the configuration given and uses it to help validate and process
@@ -37,5 +37,7 @@ func (uc *UserConfig) GetCommand(command string) (*process.Command, error){
     return nil, errors.New(fmt.Sprintf("Command '%v' does not exists in this config", command))
   }
 
-  return &commandStruct, nil
+  commandStruct.Name = command
+
+  return commandStruct, nil
 }

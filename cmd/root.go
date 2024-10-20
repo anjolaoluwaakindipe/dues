@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"sync"
@@ -31,6 +32,8 @@ var (
 		Long: ``,
     Args: cobra.MatchAll(cobra.MinimumNArgs(1)),
 		RunE: rootRun,
+    SilenceUsage: true,
+    SilenceErrors: true,
 	}
 )
 
@@ -39,7 +42,7 @@ var (
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
-    log.Logger.Error(fmt.Sprintf("%v", err))
+    log.Logger.Error(err.Error())
 		os.Exit(1)
 	}
 }
@@ -75,9 +78,7 @@ func rootRun(cmd *cobra.Command, args []string) error {
     return err
   }
   
-
 	watcher, err := fsnotify.NewWatcher()
-
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -120,11 +121,11 @@ func RunDues(d *debounce.Debouncer, command *process.Command, wg *sync.WaitGroup
 	preCtx, done := context.WithTimeout(context.Background(), 15*time.Second)
 	err := command.LaunchPreCommand(preCtx)
 	if err != nil {
-		log.Logger.Error(fmt.Sprintf("An error occured launching precommand field: %v", err))
+    log.Logger.Error("An error occured launching precommand field:", slog.String("error", err.Error()))
 	}
 	done()
 	ctx, done := context.WithCancel(context.Background())
-	go d.Start(1*time.Millisecond, func() {
+	go d.Start(1*time.Second, func() {
 		if err := command.LaunchCommand(ctx); err != nil {
 			log.Logger.Error(fmt.Sprintf("An error occured launching command field: %v", err))
 		}
@@ -161,7 +162,6 @@ func RunDues(d *debounce.Debouncer, command *process.Command, wg *sync.WaitGroup
 				}
 			}
 			if event.Has(fsnotify.Create) {
-				log.Logger.Debug(fmt.Sprintf("Name of created event is %v", event.Name))
 				if utils.IsDir(event.Name) {
 					utils.WalkSubdirectories(event.Name, addFilesToWatcher)
 				}

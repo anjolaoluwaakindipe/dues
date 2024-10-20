@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/anjolaoluwaakindipe/dues/internal/log"
 )
 
 type Command struct {
@@ -18,10 +21,12 @@ type Command struct {
 	Name        string
 	Ignore      []string
 	Include     []string
+	Color       log.StringColor
 }
 
-// Validates the command structure 
+// Validates the command structure
 func (c *Command) Process(configPath string) error {
+  c.Color = log.GetRandomStringColor()
 
 	if err := c.processCommand(); err != nil {
 		return err
@@ -51,9 +56,9 @@ func (c *Command) processCommand() error {
 	return nil
 }
 
-// Validates whether the cwd exists. If the Cwd field is a valid absolute path 
-// then no error is returned. If not it is assumed that the Cwd path is a relative path 
-// with respective to the configPath. Thus the Cwd field with be checked to validate that 
+// Validates whether the cwd exists. If the Cwd field is a valid absolute path
+// then no error is returned. If not it is assumed that the Cwd path is a relative path
+// with respective to the configPath. Thus the Cwd field with be checked to validate that
 // it is a valid relative path
 func (c *Command) processCwd(configPath string) error {
 	c.Cwd = strings.TrimSpace(c.Cwd)
@@ -104,19 +109,19 @@ func (c *Command) postCommandSlice() []string {
 	return commandAsSlice
 }
 
-// Launches pre command 
+// Launches pre command
 func (c *Command) LaunchPreCommand(ctx context.Context) error {
 	pcs := c.preCommandSlice()
 	return c.runCmd(pcs, ctx)
 }
 
-// Launches command 
+// Launches command
 func (c *Command) LaunchCommand(ctx context.Context) error {
 	cs := c.commandSlice()
 	return c.runCmd(cs, ctx)
 }
 
-// Launches post command 
+// Launches post command
 func (c *Command) LaunchPostCommand(ctx context.Context) error {
 	pcs := c.postCommandSlice()
 	return c.runCmd(pcs, ctx)
@@ -136,8 +141,8 @@ func (c *Command) runCmd(command []string, ctx context.Context) error {
 		cmd = exec.CommandContext(ctx, command[0], command[1:]...)
 	}
 	cmd.Dir = c.Cwd
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
+	cmd.Stderr = log.NewDuesWriter(os.Stderr, log.Colorize(log.LightRed, slog.LevelInfo.String()), log.Colorize(c.Color, c.Name))
+	cmd.Stdout = log.NewDuesWriter(os.Stdout, log.Colorize(log.LightCyan, slog.LevelInfo.String()), log.Colorize(c.Color, c.Name))
 
 	err := cmd.Start()
 

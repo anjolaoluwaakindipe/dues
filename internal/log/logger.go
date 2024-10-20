@@ -1,3 +1,6 @@
+/*
+Copyright © 2024 The Dues Authors
+*/
 package log
 
 import (
@@ -5,21 +8,23 @@ import (
 	"os"
 )
 
+// Default Logger for the application
 var Logger *slog.Logger
 
-func InitLogger() {
+// initializes the default logger
+func initDefaultLogger() {
 	if Logger == nil {
 		level := slog.LevelVar{}
 		level.Set(slog.LevelDebug)
 		opts := slog.HandlerOptions{
 			Level: &level,
 		}
-		handler := slog.NewTextHandler(os.Stdout, &opts)
+		handler := NewDuesHandler(os.Stdout, &opts)
 		Logger = slog.New(handler)
 	}
 }
 
 func init(){
-  InitLogger()  
+  initDefaultLogger()  
 }
 
