@@ -12,7 +12,7 @@ import (
 type StringColor = int
 
 const (
-	reset                    = "\033[0m"
+	reset        string      = "\033[0m"
 	Black        StringColor = 30
 	Red          StringColor = 31
 	Green        StringColor = 32
@@ -31,15 +31,15 @@ const (
 	White        StringColor = 97
 )
 
-func GetRandomStringColor() StringColor{
-  colorOptions := []StringColor{ Blue, Magenta, LightBlue, LightMagenta, Red}
-  selectedColor := colorOptions[rand.Intn(len(colorOptions))]
-  return selectedColor
+func GetRandomStringColor() StringColor {
+	colorOptions := []StringColor{Blue, Magenta, LightBlue, LightMagenta, Red}
+	selectedColor := colorOptions[rand.Intn(len(colorOptions))]
+	return selectedColor
 }
 
 func ColorizeRandom(v string) string {
-  selectedColor := GetRandomStringColor()
-  return Colorize(selectedColor, v)
+	selectedColor := GetRandomStringColor()
+	return Colorize(selectedColor, v)
 }
 
 func Colorize(colorCode StringColor, v string) string {
