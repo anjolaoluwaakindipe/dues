@@ -20,23 +20,22 @@ import (
 	"github.com/anjolaoluwaakindipe/dues/internal/utils"
 )
 
-
 type DuesConfig struct {
-  commands []string
-  configPath string
+	Commands   []string
+	ConfigPath string
 }
 
 func RunDues(duesConfig DuesConfig) error {
-  commands := duesConfig.commands
-  configPath := duesConfig.configPath
-  if len(commands) >= 2 {
+	commands := duesConfig.Commands
+	configPath := duesConfig.ConfigPath
+	if len(commands) >= 2 {
 
-    return errors.New("Can not process multiple commands as of now!")
-  }
+		return errors.New("Can not process multiple commands as of now!")
+	}
 
-  command := commands[0]
-  
-  // Read Json file to get all commands available
+	command := commands[0]
+
+	// Read Json file to get all commands available
 	var userConfig config.UserConfig
 	err := config.ReadConfigFile(configPath, &userConfig)
 
@@ -48,11 +47,14 @@ func RunDues(duesConfig DuesConfig) error {
 
 	selectedCommand, err := userConfig.GetCommand(command)
 
-  if err != nil {
-    return err
-  }
-  
+	if err != nil {
+		return err
+	}
+
 	watcher, err := filewatcher.NewDefaultWatcher()
+	if err != nil {
+		return fmt.Errorf("could not initialize file watcher: %w", err)
+	}
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
@@ -67,12 +69,12 @@ func RunDues(duesConfig DuesConfig) error {
 
 	wg.Wait()
 
-  return nil
+	return nil
 }
 
-func duesProcessLoop(d *debounce.Debouncer, command *process.Command, wg *sync.WaitGroup, watcher filewatcher.Watcher, sigs chan os.Signal){
+func duesProcessLoop(d *debounce.Debouncer, command *process.Command, wg *sync.WaitGroup, watcher filewatcher.Watcher, sigs chan os.Signal) {
 
-  // Callback function to help add detected files to watcher
+	// Callback function to help add detected files to watcher
 	addFilesToWatcher := func(path string) {
 		watcher.Add(path)
 	}
@@ -95,7 +97,7 @@ func duesProcessLoop(d *debounce.Debouncer, command *process.Command, wg *sync.W
 	preCtx, done := context.WithTimeout(context.Background(), 15*time.Second)
 	err := command.LaunchPreCommand(preCtx)
 	if err != nil {
-    log.Logger.Error("An error occured launching precommand field:", slog.String("error", err.Error()))
+		log.Logger.Error("An error occured launching precommand field:", slog.String("error", err.Error()))
 	}
 	done()
 	ctx, done := context.WithCancel(context.Background())
@@ -106,11 +108,13 @@ func duesProcessLoop(d *debounce.Debouncer, command *process.Command, wg *sync.W
 	})
 
 	cancellation = &done
+  fileWathcherChannel := watcher.Events()
 
 	for {
 		select {
-		case event, ok := <-watcher.Events():
+		case event, ok := <-fileWathcherChannel:
 			if !ok {
+				log.Logger.Error(fmt.Sprintf("An error occured while watching files belonging to command %s", command.Name))
 				return
 			}
 			if event.Has(filewatcher.Write) {
@@ -136,8 +140,8 @@ func duesProcessLoop(d *debounce.Debouncer, command *process.Command, wg *sync.W
 				}
 			}
 			if event.Has(filewatcher.Create) {
-        // We assume that files would already been watched by a 
-        // specific directory
+				// We assume that files would already been watched by a
+				// specific directory
 				if utils.IsDir(event.Name()) {
 					utils.WalkSubdirectories(event.Name(), addFilesToWatcher)
 				}
