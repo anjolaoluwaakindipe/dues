@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/anjolaoluwaakindipe/dues/internal/log"
-	dues "github.com/anjolaoluwaakindipe/dues/internal/pkg"
+	dues "github.com/anjolaoluwaakindipe/dues/pkg"
 	"github.com/spf13/cobra"
 )
 

@@ -23,8 +23,15 @@ func NewDebouncer() *Debouncer {
 	}
 }
 
+// Start invokess the debouncer callback after a specific delay.
+// If the reset method is called before the callback is invoked then
+// the delay will be reset. If the Cancel Method is called then the delay will 
+// be stopped and the callback will not be invoked
 func (self *Debouncer) Start(delay time.Duration, callback func()) {
 	self.timer = time.NewTimer(delay)
+  defer func(){
+    self.started = false
+  }()
 	for {
 		self.started = true
 		select {
@@ -37,14 +44,18 @@ func (self *Debouncer) Start(delay time.Duration, callback func()) {
 			}
 		case <-self.timer.C:
 			callback()
+      return 
 		}
 	}
 }
 
-func (self *Debouncer) Reset() bool {
+func (self *Debouncer) Reset(delay *time.Duration) bool {
 	if !self.started {
 		return false
 	}
+  if delay != nil {
+    self.timer = time.NewTimer(*delay)
+  }
 	self.signalChan <- reset
 	return true
 }
