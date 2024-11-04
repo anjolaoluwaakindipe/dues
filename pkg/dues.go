@@ -46,13 +46,13 @@ func RunDues(duesConfig DuesConfig) error {
 		commandList = append(commandList, selectedCommand)
 	}
 
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	var wg sync.WaitGroup
   backgroundCtx, cancel := context.WithCancel(context.Background())
   var commandListErr error = nil 
 	for _, currCommand := range commandList {
+    sigs := make(chan os.Signal, 1)
+    signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 		watcher, err := filewatcher.NewDefaultWatcher()
 		if err != nil {
